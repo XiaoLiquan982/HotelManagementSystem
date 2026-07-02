@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+<meta charset="utf-8">
+<title>我的预订</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="../../layui/css/layui.css">
+<link rel="stylesheet" href="../../xznstatic/css/common.css"/>
+<link rel="stylesheet" href="../../xznstatic/css/style.css"/>
+<script type="text/javascript" src="../../xznstatic/js/jquery-1.11.3.min.js"></script>
+</head>
+<style>
+	html::after {
+		position: fixed;
+		top: 0;
+		right: 0;
+		left: 0;
+		bottom: 0;
+		content: '';
+		display: block;
+		background-attachment: fixed;
+		background-size: cover;
+		background-position: center;
+		background-image: url(http://codegen.caihongy.cn/20220129/e25ed31f7389488a8bafe4379c6892d7.png);
+		z-index: -1;
+	}
+	body {
+		background: transparent;
+	}
+	.booking-wrap {
+		width: 86%;
+		margin: 24px auto 40px;
+	}
+	.booking-title {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 14px 20px;
+		margin-bottom: 16px;
+		border-top: 12px solid rgba(213, 169, 122, 1);
+		border-radius: 8px;
+		background: rgba(223, 195, 153, 1);
+		color: #fff;
+	}
+	.booking-title h1 {
+		margin: 0;
+		font-size: 20px;
+		font-weight: 500;
+	}
+	.booking-title span {
+		font-size: 14px;
+	}
+	.summary-row {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+	.summary-item {
+		padding: 14px 16px;
+		background: #fff;
+		border-top: 8px solid rgba(213, 169, 122, 1);
+		border-radius: 8px;
+		box-shadow: 0 3px 8px rgba(0, 0, 0, .08);
+	}
+	.summary-item span {
+		display: block;
+		color: #666;
+		font-size: 13px;
+	}
+	.summary-item strong {
+		display: block;
+		margin-top: 6px;
+		color: #1f1f1f;
+		font-size: 22px;
+		font-weight: 600;
+	}
+	.filter-bar {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 10px;
+		padding: 12px;
+		margin-bottom: 12px;
+		background: rgba(255, 255, 255, .92);
+		border-radius: 8px;
+	}
+	.filter-bar .layui-input,
+	.filter-bar .layui-select {
+		height: 38px;
+		border-radius: 6px;
+	}
+	.order-table {
+		overflow-x: auto;
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 3px 8px rgba(0, 0, 0, .08);
+	}
+	.order-table table {
+		margin: 0;
+	}
+	.room-cell {
+		display: flex;
+		align-items: center;
+		min-width: 210px;
+	}
+	.room-cell img {
+		width: 72px;
+		height: 58px;
+		margin-right: 10px;
+		object-fit: cover;
+		border-radius: 6px;
+	}
+	.room-name {
+		color: #222;
+		font-size: 15px;
+	}
+	.room-type {
+		margin-top: 4px;
+		color: #777;
+		font-size: 12px;
+	}
+	.pay-tag {
+		display: inline-block;
+		padding: 4px 10px;
+		border-radius: 18px;
+		color: #8a5a13;
+		background: #fff1d6;
+	}
+	.pay-tag.paid {
+		color: #1f7a4d;
+		background: #dff6ea;
+	}
+	.money {
+		color: #c86b21;
+		font-weight: 600;
+	}
+	.action-cell {
+		display: flex;
+		gap: 8px;
+		justify-content: center;
+	}
+	.empty-state {
+		padding: 36px 20px;
+		text-align: center;
+		color: #777;
+		background: #fff;
+		border-radius: 8px;
+	}
+	.pager {
+		margin-top: 16px;
+		text-align: center;
+	}
+	@media (max-width: 768px) {
+		.booking-wrap {
+			width: 94%;
+			margin-top: 14px;
+		}
+		.booking-title,
+		.filter-bar {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.summary-row {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+<body>
+  <div id="app">
+	<div class="booking-wrap">
+		<div class="booking-title">
+			<h1>我的预订</h1>
+			<span>{{username ? username + ' 的订单' : '用户订单'}}</span>
+		</div>
+
+		<div class="summary-row">
+			<div class="summary-item">
+				<span>订单总数</span>
+				<strong>{{total}}</strong>
+			</div>
+			<div class="summary-item">
+				<span>未支付</span>
+				<strong>{{unpaidCount}}</strong>
+			</div>
+			<div class="summary-item">
+				<span>已支付</span>
+				<strong>{{paidCount}}</strong>
+			</div>
+		</div>
+
+		<form class="layui-form filter-bar">
+			<input type="text" name="kefangmingcheng" id="kefangmingcheng" placeholder="客房名称" autocomplete="off" class="layui-input" style="width: 180px;">
+			<select name="ispay" id="ispay">
+				<option value="">支付状态</option>
+				<option value="未支付">未支付</option>
+				<option value="已支付">已支付</option>
+			</select>
+			<button id="btn-search" type="button" class="layui-btn" style="background:#CB945C;">
+				<i class="layui-icon layui-icon-search"></i>搜索
+			</button>
+			<button id="btn-reset" type="button" class="layui-btn layui-btn-primary">重置</button>
+		</form>
+
+		<div class="order-table" v-if="dataList.length">
+			<table class="layui-table" lay-skin="line">
+				<thead>
+					<tr>
+						<th>预订编号</th>
+						<th>客房</th>
+						<th>入住日期</th>
+						<th>数量</th>
+						<th>总金额</th>
+						<th>支付状态</th>
+						<th style="text-align:center;">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="item in dataList" :key="item.id">
+						<td>{{item.yudingbianhao}}</td>
+						<td>
+							<div class="room-cell">
+								<img :src="roomImage(item)" alt="">
+								<div>
+									<div class="room-name">{{item.kefangmingcheng}}</div>
+									<div class="room-type">{{item.kefangleixing}}</div>
+								</div>
+							</div>
+						</td>
+						<td>{{item.yudingriqi || '-'}}</td>
+						<td>{{item.shuliang || 1}}</td>
+						<td class="money">￥{{money(item.zongjine || item.kefangjiage)}}</td>
+						<td><span class="pay-tag" :class="payText(item.ispay)==='已支付'?'paid':''">{{payText(item.ispay)}}</span></td>
+						<td>
+							<div class="action-cell">
+								<button type="button" class="layui-btn layui-btn-sm layui-btn-primary" @click="detail(item.id)">详情</button>
+								<button v-if="payText(item.ispay)!=='已支付'" type="button" class="layui-btn layui-btn-sm" style="background:#CB945C;" @click="pay(item.id)">支付</button>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="empty-state" v-if="!dataList.length">暂无预订记录</div>
+		<div class="pager" id="pager"></div>
+	</div>
+  </div>
+
+  <script src="../../layui/layui.js"></script>
+  <script src="../../js/vue.js"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../modules/config.js"></script>
+  <script src="../../js/utils.js"></script>
+
+  <script type="text/javascript">
+    var vue = new Vue({
+      el: '#app',
+      data: {
+		dataList: [],
+		total: 0,
+		paidCount: 0,
+		unpaidCount: 0,
+		username: localStorage.getItem('adminName') || '',
+		baseurl: ''
+      },
+      methods: {
+		roomImage(item) {
+			if (!item.kefangtupian) return '';
+			return this.baseurl + item.kefangtupian.split(',')[0];
+		},
+		money(value) {
+			return Number(value || 0).toFixed(2);
+		},
+		payText(value) {
+			var text = String(value || '').trim();
+			return text.indexOf('已') !== -1 || text.toLowerCase() === 'paid' ? '已支付' : '未支付';
+		},
+		detail(id) {
+			jump('../kefangyuding/detail.html?id=' + id);
+		},
+		pay(id) {
+			window.payOrder(id);
+		}
+      }
+    });
+
+    layui.use(['layer', 'form', 'element', 'http', 'jquery', 'laypage'], function() {
+		var layer = layui.layer;
+		var form = layui.form;
+		var http = layui.http;
+		var jquery = layui.jquery;
+		var laypage = layui.laypage;
+		var limit = 6;
+		var currentPage = 1;
+
+		vue.baseurl = http.baseurl;
+
+		if (!localStorage.getItem('Token') || localStorage.getItem('userTable') !== 'yonghu') {
+			layer.msg('请先使用用户账号登录', {time: 1600, icon: 5}, function() {
+				window.parent.location.href = './pages/login/login.html';
+			});
+			return;
+		}
+
+		form.render();
+		pageList(1);
+
+		jquery('#btn-search').click(function() {
+			pageList(1);
+		});
+
+		jquery('#btn-reset').click(function() {
+			jquery('#kefangmingcheng').val('');
+			jquery('#ispay').val('');
+			form.render('select');
+			pageList(1);
+		});
+
+		window.payOrder = function(id) {
+			layer.confirm('确认支付该订单吗？', {icon: 3, title: '支付确认'}, function(index) {
+				layer.close(index);
+				http.request('kefangyuding/info/' + id, 'get', {}, function(res) {
+					var order = res.data || {};
+					order.ispay = '已支付';
+					http.requestJson('kefangyuding/update', 'post', order, function() {
+						layer.msg('支付成功', {time: 1200, icon: 6});
+						pageList(currentPage);
+					});
+				});
+			});
+		};
+
+		function buildParam(page) {
+			var param = {
+				page: page,
+				limit: limit,
+				sidx: 'id',
+				order: 'desc'
+			};
+			var roomName = jquery('#kefangmingcheng').val();
+			var payStatus = jquery('#ispay').val();
+			if (roomName) {
+				param.kefangmingcheng = '%' + roomName + '%';
+			}
+			if (payStatus) {
+				param.ispay = payStatus;
+			}
+			return param;
+		}
+
+		function refreshStats(list, total) {
+			var paid = 0;
+			for (var i = 0; i < list.length; i++) {
+				if (vue.payText(list[i].ispay) === '已支付') paid++;
+			}
+			vue.total = total;
+			vue.paidCount = paid;
+			vue.unpaidCount = list.length - paid;
+		}
+
+		function pageList(page) {
+			var param = buildParam(page);
+			currentPage = page;
+			http.request('kefangyuding/page', 'get', param, function(res) {
+				var data = res.data || {};
+				var list = data.list || [];
+				vue.dataList = list;
+				refreshStats(list, data.total || 0);
+				laypage.render({
+					elem: 'pager',
+					count: data.total || 0,
+					limit: limit,
+					curr: page,
+					groups: 5,
+					layout: ['prev', 'page', 'next', 'count'],
+					theme: '#CB945C',
+					jump: function(obj, first) {
+						if (!first) pageList(obj.curr);
+					}
+				});
+			});
+		}
+    });
+  </script>
+</body>
+</html>
